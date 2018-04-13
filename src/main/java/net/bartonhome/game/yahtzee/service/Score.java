@@ -7,10 +7,14 @@ import net.bartonhome.game.yahtzee.ScoreConstants;
 public class Score implements ScoreConstants {
 	private HashMap<String, Integer> namedScores;
 	int yahtzeeBonus;
+	String lastScoreName;
+	private boolean lastScoreWasYahtzeeBonus;
 	
 	public Score () {
 		namedScores = new HashMap<String, Integer>();
 		yahtzeeBonus = 0;
+		lastScoreName = "";
+		lastScoreWasYahtzeeBonus = false;
 	}
 	
 	public boolean isComplete(){
@@ -25,8 +29,17 @@ public class Score implements ScoreConstants {
 		if (isUsed(name)) throw new GameException("Already used " + name);
 		if (isYahtzee && isUsed(USE_YAHTZEE)) {
 			yahtzeeBonus += 100;
+			lastScoreWasYahtzeeBonus = true;
 		}
 		namedScores.put(name, score);
+		lastScoreName = name;
+	}
+	
+	public void undoLastUse () {
+		if (lastScoreName.isEmpty()) return;
+		if (lastScoreWasYahtzeeBonus) yahtzeeBonus -= 100;
+		namedScores.remove(lastScoreName);
+		lastScoreName = "";
 	}
 	
 	public int get(String name) {

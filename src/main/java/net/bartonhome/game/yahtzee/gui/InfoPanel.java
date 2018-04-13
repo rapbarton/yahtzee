@@ -24,7 +24,7 @@ public class InfoPanel extends JPanel {
 		add ("", startNewGame);
 		add ("tab", new JLabel("     "));
 		add ("tab", new JLabel("High Score"));
-		jtfHighScore = new JTextField("0", 10);
+		jtfHighScore = new ScoreField("0");
 		add ("tab hfill", jtfHighScore);
 		
 		startNewGame.addActionListener(new ActionListener() {

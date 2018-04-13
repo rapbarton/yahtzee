@@ -19,7 +19,7 @@ import net.bartonhome.game.yahtzee.service.GameController;
 import net.bartonhome.game.yahtzee.service.Score;
 
 public class ScoreSheetPanel extends JPanel implements ScoreConstants {
-	private static final int WIDTH_SCORE = 5;
+	
 	public static final String USE_ONES = "Ones";
 	public static final String USE_TWOS = "Twos";
 	public static final String USE_THREES = "Threes";
@@ -39,25 +39,25 @@ public class ScoreSheetPanel extends JPanel implements ScoreConstants {
 		USE_THREE_KIND, USE_FOUR_KIND, USE_FULL_HOUSE, 
 		USE_SMALL_STRAIGHT, USE_LONG_STRAIGHT, USE_YAHTZEE, USE_CHANCE};
 	
-//	JTextField scoreOnes = new JTextField(WIDTH_SCORE);
-//	JTextField scoreTwos = new JTextField(WIDTH_SCORE);
-//	JTextField scoreThrees = new JTextField(WIDTH_SCORE);
-//	JTextField scoreFours = new JTextField(WIDTH_SCORE);
-//	JTextField scoreFives = new JTextField(WIDTH_SCORE);
-//	JTextField scoreSixes = new JTextField(WIDTH_SCORE);
-	JTextField scoreSectionOneSubTotal = new JTextField(WIDTH_SCORE);
-	JTextField scoreSectionOneBonus = new JTextField(WIDTH_SCORE);
-	JTextField scoreSectionOneTotal = new JTextField(WIDTH_SCORE);
-//	JTextField scoreThreeOfAKind = new JTextField(WIDTH_SCORE);
-//	JTextField scoreFourOfAKind = new JTextField(WIDTH_SCORE);
-//	JTextField scoreFullHouse = new JTextField(WIDTH_SCORE);
-//	JTextField scoreSmlStraight = new JTextField(WIDTH_SCORE);
-//	JTextField scoreLngStraight = new JTextField(WIDTH_SCORE);
-//	JTextField scoreYahtzee = new JTextField(WIDTH_SCORE);
-//	JTextField scoreChance = new JTextField(WIDTH_SCORE);
-	JTextField scoreYahtzeeBonus = new JTextField(WIDTH_SCORE);
-	JTextField scoreSectionTwoTotal = new JTextField(WIDTH_SCORE);
-	JTextField scoreTotal = new JTextField(WIDTH_SCORE);
+//	JTextField scoreOnes = new ScoreField();
+//	JTextField scoreTwos = new ScoreField();
+//	JTextField scoreThrees = new ScoreField();
+//	JTextField scoreFours = new ScoreField();
+//	JTextField scoreFives = new ScoreField();
+//	JTextField scoreSixes = new ScoreField();
+	JTextField scoreSectionOneSubTotal = new ScoreField();
+	JTextField scoreSectionOneBonus = new ScoreField();
+	JTextField scoreSectionOneTotal = new ScoreField();
+//	JTextField scoreThreeOfAKind = new ScoreField();
+//	JTextField scoreFourOfAKind = new ScoreField();
+//	JTextField scoreFullHouse = new ScoreField();
+//	JTextField scoreSmlStraight = new ScoreField();
+//	JTextField scoreLngStraight = new ScoreField();
+//	JTextField scoreYahtzee = new ScoreField();
+//	JTextField scoreChance = new ScoreField();
+	JTextField scoreYahtzeeBonus = new ScoreField();
+	JTextField scoreSectionTwoTotal = new ScoreField();
+	JTextField scoreTotal = new ScoreField();
 	
 	JButton useOnes = new JButton("Use");
 	JButton useTwos = new JButton("Use");
@@ -73,7 +73,7 @@ public class ScoreSheetPanel extends JPanel implements ScoreConstants {
 	JButton useYahtzee = new JButton("Use");
 	JButton useChance = new JButton("Use");
 	
-	HashMap<String, JTextField> scoresForUseButtons;
+	HashMap<String, ScoreField> scoresForUseButtons;
 	private HashMap<String, JButton> useButtons;
 	
 	public ScoreSheetPanel() {
@@ -96,18 +96,26 @@ public class ScoreSheetPanel extends JPanel implements ScoreConstants {
 		useLngStraight = initButton(USE_LONG_STRAIGHT);
 		useYahtzee = initButton(USE_YAHTZEE);
 		useChance = initButton(USE_CHANCE);
-		scoresForUseButtons = new HashMap<String, JTextField>();
+		scoresForUseButtons = new HashMap<String, ScoreField>();
 	}
 
 	private JButton initButton(String name) {
 		JButton button = new JButton("Use");
 		useButtons.put(name, button);
 		button.setName(name);
-		button.setPreferredSize(new Dimension(60,15));
+		button.setPreferredSize(new Dimension(60,20));
 		button.setBorder(BorderFactory.createEmptyBorder());
 		button.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Score gameScore = GameController.getInstance().use(((JButton)e.getSource()).getName());
+				Score gameScore;
+				JButton button = ((JButton)e.getSource());
+				if (button.getText().equals("No!")) {
+					gameScore = GameController.getInstance().undoLastUse();
+					button.setText("Use");
+				} else {
+					String name = button.getName();
+					gameScore = GameController.getInstance().use(name);
+				}
 				updateFromGameScore(gameScore);
 			}
 		});
@@ -146,12 +154,17 @@ public class ScoreSheetPanel extends JPanel implements ScoreConstants {
 		for (String name : NAMES) {
 			boolean isUsed = gameScore.isUsed(name);
 			useButtons.get(name).setEnabled(!isUsed);
+			useButtons.get(name).setText("Use");
 		}
 	}
 
-	public void disableUseButtons () {
+	public void disableUseButtons (String nameToMakeUndo) {
 		for (String name : NAMES) {
-			useButtons.get(name).setEnabled(false);
+			if (name.equals(nameToMakeUndo)) {
+				useButtons.get(name).setText("No!");
+			} else {
+				useButtons.get(name).setEnabled(false);
+			}
 		}
 	}
 
@@ -201,8 +214,7 @@ public class ScoreSheetPanel extends JPanel implements ScoreConstants {
 	}
 
 	private void addUseRow(JPanel panel, JButton useButton) {
-		JTextField scoreField = new JTextField("-",WIDTH_SCORE);
-		scoreField.setEditable(false);
+		ScoreField scoreField = new ScoreField();
 		scoresForUseButtons.put(useButton.getName(), scoreField );
 		panel.add ("br", new JLabel(useButton.getName()));
 		panel.add ("tab", scoreField);

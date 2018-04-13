@@ -1,5 +1,12 @@
 package net.bartonhome.game.yahtzee.service;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.swing.SwingUtilities;
@@ -20,6 +27,8 @@ public class GameController implements ScoreConstants {
 	private int goThrow = 1;
 	private Score gameScore;
 	private int highScore = 0;
+	private PlaySound sound = new PlaySound();
+	private int lastGoThrow = 1;
 	
 	public static GameController getInstance() {
 		if (null == instance) instance = new GameController();
@@ -29,12 +38,15 @@ public class GameController implements ScoreConstants {
 	private GameController() {
 		diceController = DiceController.getInstance();
 		yahtzeeView = YahtzeePanel.getInstance();
+		highScore = readHighScore();
+		yahtzeeView.getInfoPanel().setHighScore(highScore);
 		startNewGame();
 	}
 
 	public void startNewGame() {
 		goThrow = 1;
 		gameScore = new Score();
+		yahtzeeView.getDicePanel().setAllDice(1);
 		yahtzeeView.getDicePanel().setFirstThrow(true);
 		yahtzeeView.getScoreSheetPanel().clearScores();
 		yahtzeeView.getDicePanel().setThrowButtonEnable(true);
@@ -47,6 +59,7 @@ public class GameController implements ScoreConstants {
 	public void throwDice() {
 		int step = 1;
 		doThrowStep(step);
+		sound.rollDice();
 	}
 	
 	private void doThrowStep(final int stepNumber) {
@@ -78,7 +91,10 @@ public class GameController implements ScoreConstants {
 		} else {
 			goThrow++;
 		}
-		yahtzeeView.getScoreSheetPanel().enableUseButtons(gameScore);		
+		yahtzeeView.getScoreSheetPanel().enableUseButtons(gameScore);	
+		if (isYahtzee(getCurrentDiceScores())) {
+			sound.woohoo();
+		}
 	}
 
 //	public DiceView[] getDiceViews() {
@@ -93,22 +109,77 @@ public class GameController implements ScoreConstants {
 		yahtzeeView.getDicePanel().clickHoldFor(source);		
 	}
 
+	public Score undoLastUse() {
+		gameScore.undoLastUse();
+		goThrow = lastGoThrow;
+		yahtzeeView.getDicePanel().setThrowButtonEnable(lastGoThrow != 3);
+		yahtzeeView.getScoreSheetPanel().enableUseButtons(gameScore);
+		yahtzeeView.getDicePanel().setFirstThrow(false);
+		return gameScore;
+	}
+	
 	public Score use(String name) {
 		int[] diceScore = getCurrentDiceScores();
 		int points = getScoreForName(name,diceScore);
 		gameScore.use(name, points, isYahtzee(diceScore));
 		boolean ended = gameScore.isComplete();
+		lastGoThrow  = goThrow;
 		goThrow = 1;
 		yahtzeeView.getDicePanel().setThrowButtonEnable(!ended);
-		yahtzeeView.getScoreSheetPanel().disableUseButtons();
+		yahtzeeView.getScoreSheetPanel().disableUseButtons(ended?"":name);
 		yahtzeeView.getDicePanel().setFirstThrow(true);
 		if (ended) {
+			endGame();
 			if (gameScore.getGrandTotal() > highScore) {
 				highScore = gameScore.getGrandTotal();
 				yahtzeeView.getInfoPanel().setHighScore(highScore);
 			}
 		}
 		return gameScore;
+	}
+
+	private void endGame() {
+		if (gameScore.getGrandTotal() > highScore) {
+			highScore = gameScore.getGrandTotal();
+			yahtzeeView.getInfoPanel().setHighScore(highScore);
+			sound.highScore();
+			recordHighScore();
+		}		
+	}
+
+	private void recordHighScore() {
+		SimpleDateFormat sdf = new SimpleDateFormat("dd-mm-yyyy");
+		String scoreLine = sdf.format(new Date()) + ":" + highScore + "\n";
+		File file = new File("YahtzeeHighScore");		
+		try {
+			FileWriter fw = new FileWriter(file);
+			fw.append(scoreLine);
+			fw.close();
+		} catch (IOException e) {
+		}
+	}
+
+	private int readHighScore() {
+		int score = 0;
+		File file = new File("YahtzeeHighScore");		
+		try {
+			FileReader fr = new FileReader(file);
+			BufferedReader br = new BufferedReader(fr);
+			String line;
+			while (null != (line = br.readLine())) {
+				String[] bits = line.split(":");
+				if (bits.length > 1) {
+					try {
+						int i = Integer.parseInt(bits[1]);
+						score = i;
+					} catch (NumberFormatException e) {
+					}
+				}
+			}			
+			fr.close();
+		} catch (IOException e) {
+		}
+		return score;
 	}
 
 	private int[] getCurrentDiceScores() {

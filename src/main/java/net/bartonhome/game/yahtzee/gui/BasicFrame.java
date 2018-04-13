@@ -15,7 +15,7 @@ import javax.swing.JPanel;
 public class BasicFrame extends JFrame {
 	private static final long serialVersionUID = 2341412341243L;
 	private static final int DEFAULT_WIDTH = 540;
-  private static final int DEFAULT_HEIGHT = 420;
+  private static final int DEFAULT_HEIGHT = 440;
   private static JFrame frame = null;
 
 	public static void launch(final String title, final JPanel content) {

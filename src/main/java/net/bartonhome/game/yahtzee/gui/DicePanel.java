@@ -95,5 +95,13 @@ public class DicePanel extends JPanel {
 		dice.setHold(!dice.isHeld());
 		
 	}
+
+	public void setAllDice(int n) {
+		Dice[] dice = getDice();
+		for (Dice di : dice) {
+			di.setValue(n);
+		}
+		
+	}
 	
 }
